@@ -37,18 +37,31 @@ func GetUserList(c *gin.Context) {
 // @param repassword query string false "确认密码"
 // @Success 200 {string} json{"code","message"}
 // @Router /user/createUser [get]
-func CreateUser(c *gin.Context) {
-	user := models.UserBasic{}
-	user.Name = c.Query("name")
-	password := c.Query("password")
-	repassword := c.Query("repassword")
 
+func CreateUser(c *gin.Context) {
+
+	// user.Name = c.Query("name")
+	// password := c.Query("password")
+	// repassword := c.Query("repassword")
+	user := models.UserBasic{}
+	user.Name = c.Request.FormValue("name")
+	password := c.Request.FormValue("password")
+	repassword := c.Request.FormValue("Identity")
+	fmt.Println(user.Name, "  >>>>>>>>>>>  ", password, repassword)
 	salt := fmt.Sprintf("%06d", rand.Int31())
 
 	data := models.FindUserByName(user.Name)
+	if user.Name == "" || password == "" || repassword == "" {
+		c.JSON(200, gin.H{
+			"code":    -1, //  0成功   -1失败
+			"message": "用户名或密码不能为空！",
+			"data":    user,
+		})
+		return
+	}
 	if data.Name != "" {
 		c.JSON(200, gin.H{
-			"code":    -1,
+			"code":    -1, //  0成功   -1失败
 			"message": "用户名已注册！",
 			"data":    user,
 		})
@@ -56,20 +69,23 @@ func CreateUser(c *gin.Context) {
 	}
 	if password != repassword {
 		c.JSON(200, gin.H{
-			"code":    -1,
-			"message": "两次密码不一致",
+			"code":    -1, //  0成功   -1失败
+			"message": "两次密码不一致！",
 			"data":    user,
 		})
 		return
 	}
-	// user.PassWord = password
+	//user.PassWord = password
 	user.PassWord = utils.MakePassword(password, salt)
-	user.Salt = salt //表更新了字段 db.AutoMigrate(&models.UserBasic{})
+	user.Salt = salt
 	fmt.Println(user.PassWord)
+	user.LoginTime = time.Now()
+	user.LoginOutTime = time.Now()
+	user.HeartbeatTime = time.Now()
 	models.CreateUser(user)
 	c.JSON(200, gin.H{
-		"code":    0,
-		"message": "新增用户成功",
+		"code":    0, //  0成功   -1失败
+		"message": "新增用户成功！",
 		"data":    user,
 	})
 }
@@ -83,8 +99,10 @@ func CreateUser(c *gin.Context) {
 // @Router /user/findUserByNameAndPwd [post]
 func FindUserByNameAndPwd(c *gin.Context) {
 	data := models.UserBasic{}
-	name := c.Query("name")
-	password := c.Query("password")
+	// name := c.Query("name")
+	// password := c.Query("password")
+	name := c.Request.FormValue("name")
+	password := c.Request.FormValue("password")
 	user := models.FindUserByName(name)
 	if user.Name == "" {
 		c.JSON(200, gin.H{
