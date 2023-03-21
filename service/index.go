@@ -1,7 +1,10 @@
 package service
 
 import (
+	"fmt"
+	"ginchat/models"
 	"html/template"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,4 +30,24 @@ func ToRegister(c *gin.Context) {
 		panic(err)
 	}
 	ind.Execute(c.Writer, "register")
+}
+
+func ToChat(c *gin.Context) {
+	ind, err := template.ParseFiles("view/chat/index.html", "view/chat/head.html",
+		"view/chat/foot.html",
+		"view/chat/tabmenu.html",
+		"view/chat/concat.html",
+		"view/chat/group.html",
+		"view/chat/profile.html",
+		"view/chat/main.html")
+	if err != nil {
+		panic(err)
+	}
+	userId, _ := strconv.Atoi(c.Query("userId"))
+	token := c.Query("token")
+	user := models.UserBasic{}
+	user.ID = uint(userId)
+	user.Identity = token
+	fmt.Println("ToChat>>>>>>>>>", user)
+	ind.Execute(c.Writer, user)
 }

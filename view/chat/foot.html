@@ -10,7 +10,7 @@
         })
     }
     function userId(){
-        return parseInt(util.parseQuery("id"))
+        return parseInt(util.parseQuery("userId"))
     }
     var app=new Vue(
             {
@@ -299,7 +299,7 @@
 
                     },
                     initwebsocket:function(){
-                        var url="ws://"+location.host+"/chat?id="+userId()+"&token=" +util.parseQuery("token");
+                        var url="ws://"+location.host+"/user/sendUserMsg?id="+userId()+"&token=" +util.parseQuery("token");
                         this.webSocket=new WebSocket(url);
                         //消息处理
                         this.webSocket.onmessage = function(evt){
@@ -327,9 +327,9 @@
                     },
                     loadfriends:function(){
                         var that = this;
-                        post("contact/loadfriend",{userid:userId()},function(res){
+                        post("searchFriends",{userid:userId()},function(res){
                             that.friends = res.rows ||[];
-                            var usermap = this.usermap;
+                            var usermap = this.usermap; 
                             for(var i in res.rows){
                                 var k = ""+res.rows[i].id
                                 usermap[k]=res.rows[i];
