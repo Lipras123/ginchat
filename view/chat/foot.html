@@ -146,12 +146,12 @@
                                     this.showprocess = true
                                     this.recorder = new MediaRecorder(stream);
                                     audioTarget.srcObject = stream;
-
+                                    //是否可用
                                     this.recorder.ondataavailable = (event) => {
                                         console.log("ondataavailable");
                                         uploadblob("attach/upload",event.data,".mp3",res=>{
                                             var duration = Math.ceil((new Date().getTime()-this.duration)/1000);
-                                            this.sendaudiomsg(res.data,duration);
+                                            this.sendaudiomsg(res.Data,duration);
                                         })
                                         stream.getTracks().forEach(function (track) {
                                             track.stop();
