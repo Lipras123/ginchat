@@ -50,6 +50,7 @@ func Chat(writer http.ResponseWriter, request *http.Request) {
 	query := request.URL.Query()
 	Id := query.Get("userId")
 	userId, _ := strconv.ParseInt(Id, 10, 64)
+	fmt.Println("Id:", Id)
 	// msgType := query.Get("type")
 	// targetId:= query.Get("targetId")
 	// context := query.Get("context")
@@ -72,14 +73,18 @@ func Chat(writer http.ResponseWriter, request *http.Request) {
 		GroupSets: set.New(set.ThreadSafe),
 	}
 	//3.用户关系
+
 	//4.userId跟node绑定 并加锁
 	rwLocker.Lock()
 	clientMap[userId] = node
 	rwLocker.Unlock()
+
 	//5.完成发送逻辑
 	go sendProc(node)
+
 	//6.完成接受逻辑
 	go recvProc(node)
+
 	sendMsg(userId, []byte("欢迎进入聊天系统"))
 }
 
@@ -87,6 +92,7 @@ func sendProc(node *Node) {
 	for {
 		select {
 		case data := <-node.DataQueue:
+			fmt.Println("[ws] sendProc >>>>> msg:", string(data))
 			err := node.Conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
 				fmt.Println(err)
@@ -104,7 +110,7 @@ func recvProc(node *Node) {
 			return
 		}
 		broadMsg(data)
-		fmt.Println("[ws] <<<<< ", data)
+		fmt.Println("[ws] recvProc <<<<< ", string(data))
 	}
 }
 
@@ -116,12 +122,13 @@ func broadMsg(data []byte) {
 func init() {
 	go udpSendProc()
 	go udpRecvProc()
+	fmt.Println("init goroutine")
 }
 
 // 完成udp数据发送协程
 func udpSendProc() {
 	con, err := net.DialUDP("udp", nil, &net.UDPAddr{
-		IP:   net.IPv4(192, 168, 31, 1),
+		IP:   net.IPv4(192, 168, 31, 187), //192, 168, 31, 1
 		Port: 3000,
 	})
 	defer con.Close()
@@ -131,6 +138,7 @@ func udpSendProc() {
 	for {
 		select {
 		case data := <-udpsendChan:
+			fmt.Println("udpsendProc data:", string(data))
 			_, err := con.Write(data)
 			if err != nil {
 				fmt.Println(err)
@@ -157,6 +165,7 @@ func udpRecvProc() {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println("udpRecvProc data:", string(buf[0:n]))
 		dispatch(buf[0:n])
 	}
 }
@@ -171,6 +180,7 @@ func dispatch(data []byte) {
 	}
 	switch msg.Type {
 	case 1: //私信
+		fmt.Println("dispatch data :", string(data))
 		sendMsg(msg.TargetId, data)
 		// case 2: //群发
 		// sendGroupMsg()
@@ -181,6 +191,7 @@ func dispatch(data []byte) {
 	}
 }
 func sendMsg(userId int64, msg []byte) {
+	fmt.Println("sendMsg >>> userID:", userId, " msg:", string(msg))
 	rwLocker.RLock()
 	node, ok := clientMap[userId]
 	rwLocker.RUnlock()

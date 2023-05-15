@@ -41,9 +41,9 @@
                     msglist:[],
 
                     msgcontext:{
-                        dstid:10,
-                        cmd:10,
-                        userid:userId()
+                        TargetId:10,
+                        Type:1,
+                        userId:userId()
                     },
                     plugins:[
                         {
@@ -223,7 +223,7 @@
                         var data={
 
                         }
-                        data.ismine = userId()==msg.userid;
+                        data.ismine = userId()==msg.userId;
                         //console.log(data.ismine,userId(),msg.userid)
                         data.user = user;
                         data.msg = msg;
@@ -242,8 +242,8 @@
                     sendtxtmsg:function(txt){
                         //{id:1,userid:2,dstid:3,cmd:10,media:1,content:"hello"}
                         var msg =this.createmsgcontext();
-                        msg.media=1;
-                        msg.content=txt;
+                        msg.Media=1;
+                        msg.Content=txt;
                         this.showmsg(userInfo(),msg);
                         this.webSocket.send(JSON.stringify(msg))
                     },
@@ -268,22 +268,21 @@
                     singlemsg:function(user){
                         //console.log(user)
                         this.win = "single";
-                        this.title = "和"+user.nickname+"聊天中";
-                        this.msgcontext.dstid = parseInt(user.id);
-                        this.msgcontext.cmd = 10;
+                        this.title = "和"+user.Name+"聊天中";
+                        this.msgcontext.TargetId = parseInt(user.ID);
+                        this.msgcontext.Type = 1;
                     },
                     groupmsg:function(group){
-
                         this.win = "group";
                         this.title=group.name;
-                        this.msgcontext.dstid = parseInt(group.id);
-                        this.msgcontext.cmd = 11;
+                        this.msgcontext.TargetId = parseInt(group.id);
+                        this.msgcontext.Type = 11;
                     },
                     loaduserinfo:function(userid,cb){
                         userid = ""+userid;
                         var userinfo = this.usermap[userid];
                         if(!userinfo){
-                            post("user/find",{id:parseInt(userid)},function(res){
+                            post("user/find",{userId:parseInt(userid)},function(res){
                                 cb(res.data);
                                 this.usermap[userid] = res.data;
                             }.bind(this))
@@ -293,18 +292,19 @@
                     },
                     onmessage:function(data){
 
-                        this.loaduserinfo(data.userid,function(user){
+                        this.loaduserinfo(data.userId,function(user){
                             this.showmsg(user,data)
                         }.bind(this))
 
                     },
                     initwebsocket:function(){
-                        var url="ws://"+location.host+"/user/sendUserMsg?id="+userId()+"&token=" +util.parseQuery("token");
+                        var url="ws://"+location.host+"/chat?userId="+userId()+"&token=" +util.parseQuery("token");
                         this.webSocket=new WebSocket(url);
                         //消息处理
                         this.webSocket.onmessage = function(evt){
-                            //{"data":"}",...}
+                            console.log("onmessage",evt.data)
                             if(evt.data.indexOf("}")>-1){
+                                console.log("recv json <=="+evt.data)
                                 this.onmessage(JSON.parse(evt.data));
                             }else{
                                 console.log("recv<=="+evt.data)
@@ -327,20 +327,20 @@
                     },
                     loadfriends:function(){
                         var that = this;
-                        post("searchFriends",{userid:userId()},function(res){
-                            that.friends = res.rows ||[];
+                        post("searchFriends",{userId:userId()},function(res){
+                            that.friends = res.Rows ||[];
                             var usermap = this.usermap; 
-                            for(var i in res.rows){
-                                var k = ""+res.rows[i].id
-                                usermap[k]=res.rows[i];
+                            for(var i in res.Rows){
+                                var k = ""+res.Rows[i].ID
+                                usermap[k]=res.Rows[i];
                             }
                             this.usermap = usermap;
                         }.bind(this))
                     },
                     loadcommunitys:function(){
                         var that = this;
-                        post("contact/loadcommunity",{userid:userId()},function(res){
-                            that.communitys = res.rows ||[];
+                        post("",{userid:userId()},function(res){
+                            that.communitys = res.Rows ||[];
                         })
                     },
                     addfriend:function(){
